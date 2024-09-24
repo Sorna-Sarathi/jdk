@@ -190,28 +190,43 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
-  // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
-  __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
+  if (TrapBasedNmethodEntryChecks) {
+    // Fast version which uses SIGTRAP
+
+    // This is a compound instruction. Patching support is provided by NativeMovRegMem.
+    // Actual patching is done in (platform-specific part of) BarrierSetNMethod.
+    __ load_const32(tmp, 0 /* Value is patched */); // 2 instructions
+
+    // Low order half of 64 bit value is currently used.
+    __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
+    trap_nmethod_entry_check( R0, tmp);
+
+  } else {
+
+    // Slower version which doesn't uses SIGTRAP
+
+    // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
+    __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
                                        true, true, false); // 2 instructions
-  __ mtctr(tmp);
+    __ mtctr(tmp);
 
-  // This is a compound instruction. Patching support is provided by NativeMovRegMem.
-  // Actual patching is done in (platform-specific part of) BarrierSetNMethod.
-  __ load_const32(tmp, 0 /* Value is patched */); // 2 instructions
+    // This is a compound instruction. Patching support is provided by NativeMovRegMem.
+    // Actual patching is done in (platform-specific part of) BarrierSetNMethod.
+    __ load_const32(tmp, 0 /* Value is patched */); // 2 instructions
 
-  // Low order half of 64 bit value is currently used.
-  __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
-  __ cmpw(CCR0, R0, tmp);
+    // Low order half of 64 bit value is currently used.
+    __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
+    __ cmpw(CCR0, R0, tmp);
 
-  __ bnectrl(CCR0);
+    __ bnectrl(CCR0);
 
-  // Oops may have been changed. Make those updates observable.
-  // "isync" can serve both, data and instruction patching.
-  // But, many GCs don't modify nmethods during a concurrent phase.
-  if (nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
-    __ isync();
+    // Oops may have been changed. Make those updates observable.
+    // "isync" can serve both, data and instruction patching.
+    // But, many GCs don't modify nmethods during a concurrent phase.
+    if (nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
+      __ isync();
+    }
   }
-
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
 

@@ -715,6 +715,7 @@ class MacroAssembler: public Assembler {
   }
 
   inline void trap_ic_miss_check(Register a, Register b);
+  inline void trap_nmethod_entry_check(Register a, Register b);
   static bool is_trap_ic_miss_check(int x) {
     return is_td(x, traptoGreaterThanUnsigned | traptoLessThanUnsigned, -1/*any reg*/, -1/*any reg*/);
   }
