@@ -199,7 +199,9 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
     // Low order half of 64 bit value is currently used.
     __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
-    trap_nmethod_entry_check( R0, tmp);
+   // MacroAssembler::trap_ic_miss_check( R0, tmp);
+   //trap_ic_miss_check(R0, tmp);
+    __ trap_nmethod_entry_check(R0, tmp);
 
   } else {
 

@@ -100,14 +100,18 @@ void VM_Version::initialize() {
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
     MSG(TrapBasedNullChecks);
+    MSG(TrapBasedNmethodEntryChecks);
     FLAG_SET_ERGO(TrapBasedNullChecks,       false);
     FLAG_SET_ERGO(TrapBasedICMissChecks,     false);
+    FLAG_SET_ERGO(TrapBasedNmethodEntryChecks, false);
   }
 
 #ifdef COMPILER2
   if (!UseSIGTRAP) {
     MSG(TrapBasedRangeChecks);
+    MSG(TrapBasedNmethodEntryChecks);
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
+    FLAG_SET_ERGO(TrapBasedNmethodEntryChecks, false);
   }
 
   if (PowerArchitecturePPC64 >= 8) {
