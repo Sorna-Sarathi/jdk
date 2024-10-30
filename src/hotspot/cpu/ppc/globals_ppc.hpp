@@ -146,8 +146,9 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
   product(bool, TrapBasedICMissChecks, true, DIAGNOSTIC,                    \
           "Raise and handle SIGTRAP if inline cache miss detected.")        \
                                                                             \
-  product(bool, TrapBasedNmethodEntryChecks, true, DIAGNOSTIC,                    \
+  product(bool, TrapBasedNmethodEntryChecks, false, DIAGNOSTIC,                    \
           "Raise and handle SIGTRAP during nmethod entry barrier.")         \
+                                                                            \
   product(bool, TraceTraps, false, DIAGNOSTIC,                              \
           "Trace all traps the signal handler handles.")                    \
                                                                             \

@@ -225,9 +225,16 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
     // Oops may have been changed. Make those updates observable.
     // "isync" can serve both, data and instruction patching.
     // But, many GCs don't modify nmethods during a concurrent phase.
-    if (nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
+    /*if (nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
       __ isync();
-    }
+    }*/
+  }
+
+  // Oops may have been changed. Make those updates observable.
+  // "isync" can serve both, data and instruction patching.
+  // But, many GCs don't modify nmethods during a concurrent phase.
+  if (nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
+    __ isync();
   }
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
