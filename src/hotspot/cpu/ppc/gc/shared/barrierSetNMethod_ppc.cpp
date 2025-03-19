@@ -39,7 +39,15 @@ class NativeNMethodBarrier: public NativeInstruction {
 
   NativeMovRegMem* get_patchable_instruction_handle() const {
     // Endianness is handled by NativeMovRegMem
-    return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 3 * 4);
+    //return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 3 * 4);
+    if(TrapBasedNmethodEntryChecks)
+    {
+    	return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 1 * 4);
+    }
+    else
+    {
+	return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 3 * 4);
+    }
   }
 
 public:
@@ -67,6 +75,39 @@ public:
 
     uint* current_instruction = reinterpret_cast<uint*>(get_barrier_start_address());
 
+    if(TrapBasedNmethodEntryChecks)
+    {
+    	get_patchable_instruction_handle()->verify();
+    	current_instruction += 2;
+
+	verify_op_code(current_instruction, Assembler::LD_OPCODE);
+
+	// trap_nmethod_entry_check
+	verify_op_code(current_instruction, Assembler::TD_OPCODE);
+    }
+    else
+    {
+    	// calculate_address_from_global_toc (compound instruction)
+	verify_op_code_manually(current_instruction, MacroAssembler::is_addis(*current_instruction));
+	verify_op_code_manually(current_instruction, MacroAssembler::is_addi(*current_instruction));
+
+	verify_op_code_manually(current_instruction, MacroAssembler::is_mtctr(*current_instruction));
+
+	get_patchable_instruction_handle()->verify();
+	current_instruction += 2;
+
+	verify_op_code(current_instruction, Assembler::LD_OPCODE);
+
+	// cmpw (mnemonic)
+	verify_op_code(current_instruction, Assembler::CMP_OPCODE);
+
+	// bnectrl (mnemonic) (weak check; not checking the exact type)
+	verify_op_code(current_instruction, Assembler::BCCTR_OPCODE);
+
+    }
+
+    /* // isync is optional
+
     // calculate_address_from_global_toc (compound instruction)
     verify_op_code_manually(current_instruction, MacroAssembler::is_addis(*current_instruction));
     verify_op_code_manually(current_instruction, MacroAssembler::is_addi(*current_instruction));
@@ -84,7 +125,7 @@ public:
     // bnectrl (mnemonic) (weak check; not checking the exact type)
     verify_op_code(current_instruction, Assembler::BCCTR_OPCODE);
 
-    // isync is optional
+    // isync is optional */
   }
 
 private:
@@ -103,14 +144,22 @@ private:
 
 static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
   BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-8 * 4);
+  address barrier_address;
+  if(TrapBasedNmethodEntryChecks){
+    barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-4 * 4);
+  }
+  else{
+    barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-8 * 4);
+  }
+ 
+  /*address barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-8 * 4); */
   if (bs_asm->nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
     barrier_address -= 4; // isync (see nmethod_entry_barrier)
   }
 
   auto barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
   debug_only(barrier->verify());
-  return barrier;
+  return barrier; 
 }
 
 void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
