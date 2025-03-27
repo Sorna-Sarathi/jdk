@@ -65,6 +65,11 @@ class NativeInstruction {
     return MacroAssembler::is_trap_null_check(long_at(0));
   }
 
+  bool is_sigtrap_nmethod_entry_check() {
+    assert(UseSIGTRAP && TrapBasedNmethodEntryChecks, "precondition");
+    return MacroAssembler::is_trap_nmethod_entry_check(long_at(0));
+  }
+
   int get_stop_type() {
     return MacroAssembler::tdi_get_si16(long_at(0), Assembler::traptoUnconditional, 0);
   }

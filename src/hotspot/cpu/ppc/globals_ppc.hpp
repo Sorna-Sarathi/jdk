@@ -147,7 +147,7 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
           "Raise and handle SIGTRAP if inline cache miss detected.")        \
                                                                             \
   product(bool, TrapBasedNmethodEntryChecks, true, DIAGNOSTIC,                    \
-          "Raise and handle SIGTRAP during nmethod entry barrier.")         \
+          "Raise and handle SIGTRAP if nmethod entry barrier is armed.")         \
                                                                             \
   product(bool, TraceTraps, false, DIAGNOSTIC,                              \
           "Trace all traps the signal handler handles.")                    \

@@ -337,7 +337,7 @@ inline void MacroAssembler::trap_ic_miss_check(Register a, Register b) {
 }
 
 inline void MacroAssembler::trap_nmethod_entry_check(Register a, Register b) {
-  td(traptoGreaterThanUnsigned | traptoLessThanUnsigned, a, b);
+  tw(traptoGreaterThanUnsigned | traptoLessThanUnsigned, a, b);
 }
 
 // Do an explicit null check if access to a+offset will not raise a SIGSEGV.

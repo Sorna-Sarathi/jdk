@@ -42,7 +42,7 @@ class NativeNMethodBarrier: public NativeInstruction {
     //return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 3 * 4);
     if(TrapBasedNmethodEntryChecks)
     {
-    	return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 1 * 4);
+    	return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 0 * 4);
     }
     else
     {
@@ -83,7 +83,7 @@ public:
 	verify_op_code(current_instruction, Assembler::LD_OPCODE);
 
 	// trap_nmethod_entry_check
-	verify_op_code(current_instruction, Assembler::TD_OPCODE);
+	verify_op_code(current_instruction, Assembler::TW_OPCODE);
     }
     else
     {

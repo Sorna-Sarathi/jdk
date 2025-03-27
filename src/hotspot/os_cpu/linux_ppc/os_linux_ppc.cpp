@@ -321,6 +321,15 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       }
 #endif
 
+      // SIGTRAP-based nmethod entry barrier.
+      else if (sig == SIGTRAP && TrapBasedNmethodEntryChecks &&
+	       nativeInstruction_at(pc)->is_sigtrap_nmethod_entry_check()) {
+	if (TraceTraps) {
+	  tty->print_cr("trap: nmethod entry barrier at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
+	}
+	stub = StubRoutines::method_entry_barrier();
+      }
+
       // stop on request
       else if (sig == SIGTRAP && (stop_type = nativeInstruction_at(pc)->get_stop_type()) != -1) {
         bool msg_present = (stop_type & MacroAssembler::stop_msg_present);

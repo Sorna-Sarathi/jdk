@@ -299,6 +299,16 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       }
 #endif
 
+      // SIGTRAP-based nmethod entry barriers.
+      else if (sig == SIGTRAP && TrapBasedNmethodEntryChecks &&
+	       nativeInstruction_at(pc)->is_sigtrap_nmethod_entry_check()) {
+	if (TraceTraps) {
+	  tty->print_cr("trap: nmethod entry barrier at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
+	}
+	stub = StubRountines::method_entry_barrier();
+	goto run_stub;
+      }
+
       else if (sig == SIGFPE /* && info->si_code == FPE_INTDIV */) {
         if (TraceTraps) {
           tty->print_raw_cr("Fix SIGFPE handler, trying divide by zero handler.");

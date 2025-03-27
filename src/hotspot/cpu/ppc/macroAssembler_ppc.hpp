@@ -720,6 +720,10 @@ class MacroAssembler: public Assembler {
     return is_td(x, traptoGreaterThanUnsigned | traptoLessThanUnsigned, -1/*any reg*/, -1/*any reg*/);
   }
 
+  static bool is_trap_nmethod_entry_check(int x) {
+    return is_tw(x, traptoGreaterThanUnsigned | traptoLessThanUnsigned, 0, -1);
+  }
+
   // Implicit or explicit null check, jumps to static address exception_entry.
   inline void null_check_throw(Register a, int offset, Register temp_reg, address exception_entry);
   inline void null_check(Register a, int offset, Label *Lis_null); // implicit only if Lis_null not provided
