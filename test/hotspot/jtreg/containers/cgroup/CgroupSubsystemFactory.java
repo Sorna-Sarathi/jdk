@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
+import jdk.test.lib.containers.cgroup.CgroupSubsystemFactoryTestData;
 import jdk.test.lib.util.FileUtils;
 import jdk.test.whitebox.WhiteBox;
 
@@ -123,63 +124,12 @@ public class CgroupSubsystemFactory {
     private String sysFsCgroupCgroupControllersNoPidsContent = "cpuset cpu io memory hugetlb rdma misc\n";
     private String sysFsCgroupCgroupControllersCpuMemoryOnlyContent = "memory cpu\n";
     private String sysFsCgroupCgroupControllersExtraWhitespaceContent = "   cpu\t  \fmemory\r \n";
-    private String cgroupsZeroHierarchy =
-            "#subsys_name hierarchy num_cgroups enabled\n" +
-            "cpuset 0 1 1\n" +
-            "cpu 0 1 1\n" +
-            "cpuacct 0 1 1\n" +
-            "memory 0 1 1\n" +
-            "devices 0 1 1\n" +
-            "freezer 0 1 1\n" +
-            "net_cls 0 1 1\n" +
-            "pids 0 1 1\n" +
-            "blkio 0 1 1\n" +
-            "perf_event 0 1 1 ";
-    private String cgroupsNonZeroJoinControllers =
-            "#subsys_name hierarchy num_cgroups enabled\n" +
-            "cpuset\t3\t1\t1\n" +
-            "cpu\t4\t153\t1\n" +
-            "cpuacct\t4\t153\t1\n" +
-            "blkio\t7\t87\t1\n" +
-            "memory\t4\t153\t1\n" +
-            "devices\t6\t87\t1\n" +
-            "freezer\t9\t1\t1\n" +
-            "net_cls\t4\t153\t1\n" +
-            "perf_event\t2\t1\t1\n" +
-            "net_prio\t4\t153\t1\n" +
-            "hugetlb\t4\t153\t1\n" +
-            "pids\t5\t95\t1\n" +
-            "rdma\t8\t1\t1\n";
-    private String cgroupV2LineHybrid = "31 30 0:27 / /sys/fs/cgroup/unified rw,nosuid,nodev,noexec,relatime shared:5 - cgroup2 none rw,seclabel,nsdelegate\n";
-    private String cgroupv1MountInfoLineMemory = "35 30 0:31 / /sys/fs/cgroup/memory rw,nosuid,nodev,noexec,relatime shared:7 - cgroup none rw,seclabel,memory\n";
-    private String mntInfoHybridStub =
-            "30 23 0:26 / /sys/fs/cgroup ro,nosuid,nodev,noexec shared:4 - tmpfs tmpfs ro,seclabel,mode=755\n" +
-            "32 30 0:28 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime shared:6 - cgroup none rw,seclabel,xattr,name=systemd\n" +
-            "36 30 0:32 / /sys/fs/cgroup/pids rw,nosuid,nodev,noexec,relatime shared:8 - cgroup none rw,seclabel,pids\n" +
-            "37 30 0:33 / /sys/fs/cgroup/perf_event rw,nosuid,nodev,noexec,relatime shared:9 - cgroup none rw,seclabel,perf_event\n" +
-            "38 30 0:34 / /sys/fs/cgroup/net_cls,net_prio rw,nosuid,nodev,noexec,relatime shared:10 - cgroup none rw,seclabel,net_cls,net_prio\n" +
-            "39 30 0:35 / /sys/fs/cgroup/hugetlb rw,nosuid,nodev,noexec,relatime shared:11 - cgroup none rw,seclabel,hugetlb\n" +
-            "40 30 0:36 / /sys/fs/cgroup/cpu,cpuacct rw,nosuid,nodev,noexec,relatime shared:12 - cgroup none rw,seclabel,cpu,cpuacct\n" +
-            "41 30 0:37 / /sys/fs/cgroup/devices rw,nosuid,nodev,noexec,relatime shared:13 - cgroup none rw,seclabel,devices\n" +
-            "42 30 0:38 / /sys/fs/cgroup/cpuset rw,nosuid,nodev,noexec,relatime shared:14 - cgroup none rw,seclabel,cpuset\n" +
-            "43 30 0:39 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:15 - cgroup none rw,seclabel,blkio\n" +
-            "44 30 0:40 / /sys/fs/cgroup/freezer rw,nosuid,nodev,noexec,relatime shared:16 - cgroup none rw,seclabel,freezer\n";
-    private String mntInfoHybridRest = cgroupv1MountInfoLineMemory + mntInfoHybridStub;
-    private String mntInfoHybridMissingMemory = mntInfoHybridStub;
-    private String mntInfoHybrid = cgroupV2LineHybrid + mntInfoHybridRest;
-    private String mntInfoHybridFlippedOrder = mntInfoHybridRest + cgroupV2LineHybrid;
-    private String mntInfoCgroupv1JoinControllers =
-            "31 22 0:26 / /sys/fs/cgroup ro,nosuid,nodev,noexec shared:9 - tmpfs tmpfs ro,mode=755\n" +
-            "32 31 0:27 / /sys/fs/cgroup/unified rw,nosuid,nodev,noexec,relatime shared:10 - cgroup2 cgroup2 rw,nsdelegate\n" +
-            "33 31 0:28 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime shared:11 - cgroup cgroup rw,xattr,name=systemd\n" +
-            "36 31 0:31 / /sys/fs/cgroup/perf_event rw,nosuid,nodev,noexec,relatime shared:15 - cgroup cgroup rw,perf_event\n" +
-            "37 31 0:32 / /sys/fs/cgroup/cpuset rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,cpuset\n" +
-            "38 31 0:33 / /sys/fs/cgroup/cpu,cpuacct,net_cls,net_prio,hugetlb,memory rw,nosuid,nodev,noexec,relatime shared:17 - cgroup cgroup rw,cpu,cpuacct,memory,net_cls,net_prio,hugetlb\n" +
-            "39 31 0:34 / /sys/fs/cgroup/pids rw,nosuid,nodev,noexec,relatime shared:18 - cgroup cgroup rw,pids\n" +
-            "40 31 0:35 / /sys/fs/cgroup/devices rw,nosuid,nodev,noexec,relatime shared:19 - cgroup cgroup rw,devices\n" +
-            "41 31 0:36 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:20 - cgroup cgroup rw,blkio\n" +
-            "42 31 0:37 / /sys/fs/cgroup/rdma rw,nosuid,nodev,noexec,relatime shared:21 - cgroup cgroup rw,rdma\n" +
-            "43 31 0:38 / /sys/fs/cgroup/freezer rw,nosuid,nodev,noexec,relatime shared:22 - cgroup cgroup rw,freezer\n";
+    private String cgroupsZeroHierarchy = CgroupSubsystemFactoryTestData.cgroupsZeroHierarchy;
+    private String cgroupsNonZeroJoinControllers = CgroupSubsystemFactoryTestData.cgroupsNonZeroJoinControllers;
+    private String mntInfoHybrid = CgroupSubsystemFactoryTestData.mntInfoHybrid;
+    private String mntInfoHybridMissingMemory = CgroupSubsystemFactoryTestData.mntInfoHybridMissingMemory;
+    private String mntInfoHybridFlippedOrder = CgroupSubsystemFactoryTestData.mntInfoHybridFlippedOrder;
+    private String mntInfoCgroupv1JoinControllers = CgroupSubsystemFactoryTestData.mntInfoCgroupv1JoinControllers;
     private String mntInfoCgroupv1MoreCpusetLine = "121 32 0:37 / /cpusets rw,relatime shared:69 - cgroup none rw,cpuset\n";
     private String mntInfoCgroupv1DoubleCpuset = mntInfoCgroupv1MoreCpusetLine + mntInfoHybrid;
     private String mntInfoCgroupv1DoubleCpuset2 =  mntInfoHybrid + mntInfoCgroupv1MoreCpusetLine;
@@ -206,39 +156,18 @@ public class CgroupSubsystemFactory {
             "net_prio    5   1   1\n" +
             "hugetlb 6   1   1\n" +
             "pids    9   80  1";  // hierarchy has to match procSelfCgroupHybridContent
-    private String mntInfoCgroupsV2Only =
-            "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 none rw,seclabel,nsdelegate\n";
+    private String mntInfoCgroupsV2Only = CgroupSubsystemFactoryTestData.mntInfoCgroupsV2Only;
     private String mntInfoCgroupsV2MoreLine =
             "240 232 0:24 /../.. /cgroup-in ro,relatime - cgroup2 cgroup2 rw,nsdelegate\n";
     private String mntInfoCgroupsV2Double = mntInfoCgroupsV2MoreLine + mntInfoCgroupsV2Only;
     private String mntInfoCgroupsV2Double2 = mntInfoCgroupsV2Only + mntInfoCgroupsV2MoreLine;
-    private String mntInfoCgroupsV1SystemdOnly =
-            "35 26 0:26 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime - cgroup systemd rw,name=systemd\n" +
-            "26 18 0:19 / /sys/fs/cgroup rw,relatime - tmpfs none rw,size=4k,mode=755\n";
+    private String mntInfoCgroupsV1SystemdOnly = CgroupSubsystemFactoryTestData.mntInfoCgroupsV1SystemdOnly;
 
     // We have a mix of V1 and V2 controllers, but none of the V1 controllers
     // are used by Java, so the JDK should start in V2 mode.
-    private String cgroupsNonZeroHierarchyOnlyFreezer =
-            "#subsys_name hierarchy  num_cgroups  enabled\n" +
-            "cpuset  0  171  1\n" +
-            "cpu  0  171  1\n" +
-            "cpuacct  0  171  1\n" +
-            "blkio  0  171  1\n" +
-            "memory  0  171  1\n" +
-            "devices  0  171  1\n" +
-            "freezer  1  1  1\n" +
-            "net_cls  0  171  1\n" +
-            "perf_event  0  171  1\n" +
-            "net_prio  0  171  1\n" +
-            "hugetlb  0  171  1\n" +
-            "pids  0  171  1\n" +
-            "rdma  0  171  1\n" +
-            "misc  0  171  1\n";
-    private String cgroupv1SelfOnlyFreezerContent = "1:freezer:/\n" +
-            "0::/user.slice/user-1000.slice/session-2.scope";
-    private String mntInfoOnlyFreezerInV1 =
-            "32 23 0:27 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:9 - cgroup2 cgroup2 rw,nsdelegate,memory_recursiveprot\n" +
-            "911 32 0:47 / /sys/fs/cgroup/freezer rw,relatime shared:476 - cgroup freezer rw,freezer\n";
+    private String cgroupsNonZeroHierarchyOnlyFreezer = CgroupSubsystemFactoryTestData.cgroupsNonZeroHierarchyOnlyFreezer;
+    private String cgroupv1SelfOnlyFreezerContent = CgroupSubsystemFactoryTestData.cgroupv1SelfOnlyFreezerContent;
+    private String mntInfoOnlyFreezerInV1 = CgroupSubsystemFactoryTestData.mntInfoOnlyFreezerInV1;
     // Test RHEL 8 (cgroups v1) with cpuset controller disabled via the kernel command line.
     // # grep cgroup /boot/grub2/grubenv
     // kernelopts=[...] cgroup_disable=cpuset
@@ -367,7 +296,7 @@ public class CgroupSubsystemFactory {
             Files.writeString(cgroupv1MntInfoMissingMemoryController, mntInfoHybridMissingMemory);
 
             cgroupV2MntInfoMissingCgroupv2 = Paths.get(existingDirectory.toString(), "mnt_info_missing_cgroup2");
-            Files.writeString(cgroupV2MntInfoMissingCgroupv2, mntInfoHybridStub);
+            Files.writeString(cgroupV2MntInfoMissingCgroupv2, mntInfoHybridMissingMemory);
 
             cgroupv1MntInfoDoubleCpuset = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_cpuset");
             Files.writeString(cgroupv1MntInfoDoubleCpuset, mntInfoCgroupv1DoubleCpuset);
